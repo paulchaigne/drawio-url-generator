@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CSV to Draw.io URL Generator</title>
+  <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; background: #f4f4f4; }
+    textarea { width: 100%; height: 200px; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; font-size: 1rem; }
+    input[type=text] { width: 100%; margin-top: 1rem; padding: 0.5rem; }
+  </style>
+</head>
+<body>
+
+  <h1>CSV to draw.io URL Generator</h1>
+
+  <p>Paste your CSV content below:</p>
+  <textarea id="csvInput" placeholder="id,place,short,level,quantity,refs,style..."></textarea>
+  <button onclick="generateURL()">Generate Diagram URL</button>
+
+  <p>Resulting draw.io URL:</p>
+  <input type="text" id="outputURL" readonly>
+
+  <script>
+    function escapeXml(unsafe) {
+      return unsafe.replace(/[<>&'"]/g, function (c) {
+        return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '\'': '&apos;', '"': '&quot;' }[c];
+      });
+    }
+
+    function generateURL() {
+      const csv = document.getElementById('csvInput').value.trim();
+
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<mxfile>
+  <diagram name="Page-1">${escapeXml(csv)}</diagram>
+</mxfile>`;
+
+      const deflated = pako.deflate(xml, { level: 9 });
+      const base64 = btoa(String.fromCharCode.apply(null, deflated));
+      const url = `https://viewer.diagrams.net/?lightbox=1&highlight=0000ff&edit=_blank&layers=1&nav=1#R${base64}`;
+
+      document.getElementById('outputURL').value = url;
+    }
+  </script>
+
+</body>
+</html>
