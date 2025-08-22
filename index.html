@@ -2,30 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Draw.io CSV to HTML Exporter</title>
+  <title>Generate draw.io HTML from CSV</title>
 </head>
 <body>
-  <h1>Generate draw.io HTML file from CSV</h1>
-  <textarea id="csv" rows="15" cols="100" placeholder="Paste your draw.io-compatible CSV here..."></textarea><br>
+  <h1>Generate draw.io HTML from CSV</h1>
+  <textarea id="csv" rows="20" cols="100" placeholder="Paste your draw.io CSV here..."></textarea><br><br>
   <button onclick="generateHtml()">Download HTML File</button>
 
   <script>
     function generateHtml() {
       const csv = document.getElementById('csv').value.trim();
+
       if (!csv) {
-        alert("Please paste your CSV data first.");
+        alert("Please paste your CSV data.");
         return;
       }
 
-      // Escape the CSV content to embed it in a data-mxgraph attribute
-      const escapedCSV = csv.replace(/"/g, '&quot;').replace(/\n/g, '&#xa;');
+      // Encode the CSV for data URL
+      const encodedCSV = encodeURIComponent(csv.replace(/\r?\n/g, '\n'));
 
+      // Create the full HTML
       const htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Draw.io Diagram</title>
+  <title>draw.io Viewer</title>
 </head>
 <body>
   <div class="mxgraph" style="max-width:100%;border:1px solid transparent;" data-mxgraph='{
@@ -34,19 +36,21 @@
     "resize":true,
     "toolbar":"zoom layers tags lightbox",
     "edit":"_blank",
-    "url": "data:text/csv,${escapedCSV}"
+    "url":"data:text/csv,${encodedCSV}"
   }'></div>
   <script type="text/javascript" src="https://viewer.diagrams.net/js/viewer-static.min.js"></script>
 </body>
 </html>`;
 
-      // Create a downloadable file
+      // Trigger download
       const blob = new Blob([htmlContent], { type: "text/html" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.download = "diagram.html";
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
       URL.revokeObjectURL(url);
     }
   </script>
