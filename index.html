@@ -1,60 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>CSV to draw.io URL</title>
+  <meta charset="UTF-8">
+  <title>CSV to Draw.io Diagram URL</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
   <style>
-    body { font-family: sans-serif; padding: 2rem; }
-    textarea { width: 100%; height: 300px; margin-bottom: 1rem; }
-    input[type="text"] { width: 100%; padding: 0.5rem; margin-top: 1rem; }
-    button { padding: 0.5rem 1rem; margin-top: 1rem; }
-    .output { margin-top: 1rem; }
+    body {
+      font-family: sans-serif;
+      max-width: 800px;
+      margin: 2em auto;
+      padding: 1em;
+    }
+    textarea {
+      width: 100%;
+      height: 300px;
+      font-family: monospace;
+    }
+    input, a.button {
+      margin-top: 1em;
+      display: inline-block;
+      padding: 0.5em 1em;
+      font-size: 1em;
+    }
+    a.button {
+      background: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+    a.button:hover {
+      background: #0056b3;
+    }
   </style>
 </head>
 <body>
-  <h1>CSV to draw.io Diagram Link</h1>
-  <p>Paste your draw.io-compatible CSV with directives below:</p>
-  <textarea id="csvInput" placeholder="Paste CSV content here..."></textarea>
-  <button onclick="generateUrl()">Generate draw.io URL</button>
-  <div class="output">
-    <p><strong>Resulting draw.io URL:</strong></p>
-    <input type="text" id="outputUrl" readonly />
-    <p><a id="previewLink" href="#" target="_blank">Open in draw.io</a></p>
-  </div>
+  <h1>CSV to Draw.io Diagram URL</h1>
+  <p>Paste your annotated CSV for draw.io below:</p>
+  <textarea id="csvInput" placeholder="Paste CSV here..."></textarea>
+  <br>
+  <button onclick="generateUrl()">Generate URL</button>
+  <br>
+  <label>Diagram URL:</label>
+  <input id="outputUrl" type="text" style="width: 100%;" readonly>
+  <br>
+  <a id="previewLink" href="#" target="_blank" class="button">Open in draw.io</a>
 
   <script>
     function generateUrl() {
       const csv = document.getElementById("csvInput").value.trim();
 
       // Wrap CSV in draw.io import XML
-      const xml =
-        `<mxfile><diagram name="Page-1">` +
-        csvToEncodedXml(csv) +
-        `</diagram></mxfile>`;
+      const xml = `<mxfile><diagram name="Page-1">` + csvToEncodedXml(csv) + `</diagram></mxfile>`;
 
-      // Compress and base64 encode
+      // Compress with pako
       const compressed = pako.deflateRaw(xml, { level: 9 });
-      const base64 = btoa(String.fromCharCode(...compressed));
 
-      // Assemble final URL
+      // Safe base64 encode
+      const base64 = uint8ToBase64(compressed);
+
+      // Final draw.io URL
       const url = `https://viewer.diagrams.net/?tags=%7B%7D&lightbox=1&highlight=0000ff&edit=_blank&layers=1&nav=1&dark=0#R${base64}`;
 
-      // Output
+      // Output URL
       document.getElementById("outputUrl").value = url;
       document.getElementById("previewLink").href = url;
     }
 
-    function csvToEncodedXml(csv) {
-      // Escape characters for XML
-      const escapeXml = str =>
-        str.replace(/&/g, "&amp;")
-           .replace(/</g, "&lt;")
-           .replace(/>/g, "&gt;")
-           .replace(/"/g, "&quot;")
-           .replace(/'/g, "&apos;");
+    // Converts Uint8Array to base64 string
+    function uint8ToBase64(u8Arr) {
+      const CHUNK_SIZE = 0x8000;
+      let index = 0;
+      let result = '';
+      while (index < u8Arr.length) {
+        let slice = u8Arr.subarray(index, index + CHUNK_SIZE);
+        result += String.fromCharCode.apply(null, slice);
+        index += CHUNK_SIZE;
+      }
+      return btoa(result);
+    }
 
-      return escapeXml(csv);
+    // Encode content for draw.io import
+    function csvToEncodedXml(csv) {
+      const xmlHeader = `<![CDATA[# csvimport: ${csv.replace(/]]>/g, ']]]]><![CDATA[>')}]]>`;
+      return xmlHeader;
     }
   </script>
 </body>
