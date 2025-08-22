@@ -16,30 +16,36 @@
   <textarea id="outputUrl" rows="3" cols="100" readonly></textarea>
 
   <script>
-    function generateUrl() {
-      const csvText = document.getElementById('csvInput').value;
+    function uint8ToBase64(uint8) {
+      let binary = '';
+      for (let i = 0; i < uint8.length; i++) {
+        binary += String.fromCharCode(uint8[i]);
+      }
+      return btoa(binary);
+    }
 
-      if (!csvText.trim()) {
+    function generateUrl() {
+      const csvText = document.getElementById('csvInput').value.trim();
+
+      if (!csvText) {
         alert("Veuillez coller du contenu CSV.");
         return;
       }
 
-      const xmlTemplate = `<?xml version="1.0" encoding="UTF-8"?>
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <mxfile host="app.diagrams.net">
-  <diagram name="Page-1">__CSV_DATA__</diagram>
+  <diagram name="Page-1"><![CDATA[${csvText}]]></diagram>
 </mxfile>`;
 
-      const encoder = new TextEncoder();
-      const raw = encoder.encode(xmlTemplate.replace('__CSV_DATA__', csvText));
-
       try {
+        const encoder = new TextEncoder();
+        const raw = encoder.encode(xml);
         const compressed = pako.deflateRaw(raw, { level: 9 });
-        const base64 = btoa(String.fromCharCode(...compressed))
+        const base64 = uint8ToBase64(compressed)
           .replace(/\+/g, '-')
           .replace(/\//g, '_');
 
         const finalUrl = `https://viewer.diagrams.net/?lightbox=1&edit=_blank&layers=1&nav=1#R${base64}`;
-
         document.getElementById('outputUrl').value = finalUrl;
       } catch (e) {
         alert("Erreur lors de la compression : " + e.message);
