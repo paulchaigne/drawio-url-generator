@@ -1,73 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>CSV to Diagram HTML Generator</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      max-width: 800px;
-      margin: auto;
-      padding: 2rem;
-    }
-    textarea {
-      width: 100%;
-      height: 200px;
-      margin-bottom: 1rem;
-    }
-    button {
-      padding: 0.5rem 1rem;
-      font-size: 1rem;
-    }
-    a.download-link {
-      display: block;
-      margin-top: 1rem;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <title>Draw.io CSV to HTML Exporter</title>
 </head>
 <body>
-  <h1>CSV to Standalone Diagram HTML</h1>
-  <p>Paste your Draw.io CSV (including the metadata headers), then click Generate:</p>
-  <textarea id="csvInput" placeholder="# label: ...\n# styles: ...\n...\nCSV data...\n"></textarea>
-  <button onclick="generateHTML()">Generate HTML File</button>
-  <a id="downloadLink" class="download-link" style="display:none">Download HTML</a>
+  <h1>Generate draw.io HTML file from CSV</h1>
+  <textarea id="csv" rows="15" cols="100" placeholder="Paste your draw.io-compatible CSV here..."></textarea><br>
+  <button onclick="generateHtml()">Download HTML File</button>
 
   <script>
-    function encodeCSV(csv) {
-      return encodeURIComponent(csv.replace(/\n/g, '\r\n'));
-    }
+    function generateHtml() {
+      const csv = document.getElementById('csv').value.trim();
+      if (!csv) {
+        alert("Please paste your CSV data first.");
+        return;
+      }
 
-    function generateHTML() {
-      const csv = document.getElementById('csvInput').value.trim();
-      if (!csv) return alert("Please paste your CSV data.");
+      // Escape the CSV content to embed it in a data-mxgraph attribute
+      const escapedCSV = csv.replace(/"/g, '&quot;').replace(/\n/g, '&#xa;');
 
-      const encodedCsv = encodeCSV(csv);
-      const htmlContent = `<!DOCTYPE html>
+      const htmlContent = `
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Diagram Viewer</title>
-  <script type="text/javascript" src="https://viewer.diagrams.net/js/viewer-static.min.js"></script>
+  <title>Draw.io Diagram</title>
 </head>
 <body>
   <div class="mxgraph" style="max-width:100%;border:1px solid transparent;" data-mxgraph='{
-    "highlight": "#0000ff",
-    "nav": true,
-    "resize": true,
-    "toolbar": "zoom layers tags lightbox",
-    "edit": "_blank",
-    "url": "data:text/csv,${encodedCsv}"
+    "highlight":"#0000ff",
+    "nav":true,
+    "resize":true,
+    "toolbar":"zoom layers tags lightbox",
+    "edit":"_blank",
+    "url": "data:text/csv,${escapedCSV}"
   }'></div>
+  <script type="text/javascript" src="https://viewer.diagrams.net/js/viewer-static.min.js"></script>
 </body>
 </html>`;
 
-      const blob = new Blob([htmlContent], { type: 'text/html' });
+      // Create a downloadable file
+      const blob = new Blob([htmlContent], { type: "text/html" });
       const url = URL.createObjectURL(blob);
-      const link = document.getElementById('downloadLink');
+      const link = document.createElement("a");
       link.href = url;
-      link.download = 'diagram.html';
-      link.style.display = 'inline';
-      link.textContent = 'Download diagram.html';
+      link.download = "diagram.html";
+      link.click();
+      URL.revokeObjectURL(url);
     }
   </script>
 </body>
