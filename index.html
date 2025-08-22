@@ -1,28 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Generate draw.io HTML from CSV</title>
+  <meta charset="UTF-8">
+  <title>Draw.io CSV to HTML Viewer</title>
 </head>
 <body>
-  <h1>Generate draw.io HTML from CSV</h1>
-  <textarea id="csv" rows="20" cols="100" placeholder="Paste your draw.io CSV here..."></textarea><br><br>
-  <button onclick="generateHtml()">Download HTML File</button>
+  <h1>CSV to draw.io HTML Viewer</h1>
+  <textarea id="csvInput" rows="20" cols="100" placeholder="Paste your draw.io CSV here..."></textarea><br><br>
+  <button onclick="generate()">Download HTML</button>
 
   <script>
-    function generateHtml() {
-      const csv = document.getElementById('csv').value.trim();
+    function generate() {
+      const csv = document.getElementById("csvInput").value.trim();
 
       if (!csv) {
-        alert("Please paste your CSV data.");
+        alert("Please paste your CSV content.");
         return;
       }
 
-      // Encode the CSV for data URL
-      const encodedCSV = encodeURIComponent(csv.replace(/\r?\n/g, '\n'));
+      // Encode the CSV
+      const encodedCsv = encodeURIComponent(csv.replace(/\r?\n/g, '\n'));
 
-      // Create the full HTML
-      const htmlContent = `
+      // Final HTML template
+      const html = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -36,21 +36,21 @@
     "resize":true,
     "toolbar":"zoom layers tags lightbox",
     "edit":"_blank",
-    "url":"data:text/csv,${encodedCSV}"
+    "url":"data:text/csv,${encodedCsv}"
   }'></div>
-  <script type="text/javascript" src="https://viewer.diagrams.net/js/viewer-static.min.js"></script>
+  <script src="https://viewer.diagrams.net/js/viewer-static.min.js"></script>
 </body>
-</html>`;
+</html>
+`;
 
-      // Trigger download
-      const blob = new Blob([htmlContent], { type: "text/html" });
+      const blob = new Blob([html], { type: "text/html" });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "diagram.html";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "diagram.html";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
   </script>
