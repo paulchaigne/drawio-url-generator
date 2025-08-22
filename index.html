@@ -2,13 +2,13 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>CSV vers URL Draw.io</title>
+  <title>Générateur Draw.io depuis CSV</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 </head>
 <body>
-  <h1>Générateur de diagramme Draw.io</h1>
+  <h1>CSV vers URL Draw.io</h1>
 
-  <textarea id="csvInput" rows="25" cols="100" placeholder="Collez ici votre configuration CSV complète..."></textarea><br><br>
+  <textarea id="csvInput" rows="25" cols="100" placeholder="Collez ici le bloc CSV avec les lignes commençant par # et vos données"></textarea><br><br>
 
   <button onclick="generateUrl()">Générer l'URL</button><br><br>
 
@@ -17,7 +17,7 @@
 
   <script>
     function uint8ToBase64(uint8) {
-      const CHUNK_SIZE = 0x8000; // 32KB
+      const CHUNK_SIZE = 0x8000;
       let result = '';
       for (let i = 0; i < uint8.length; i += CHUNK_SIZE) {
         result += String.fromCharCode.apply(null, uint8.subarray(i, i + CHUNK_SIZE));
@@ -29,4 +29,34 @@
       const csvText = document.getElementById('csvInput').value.trim();
 
       if (!csvText) {
-        alert("Veuillez coller du c
+        alert("Veuillez coller du contenu CSV.");
+        return;
+      }
+
+      // Le diagramme draw.io en mode csvimport
+      const xml = `
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1"><![CDATA[# csvimport
+${csvText}
+]]></diagram>
+</mxfile>`.trim();
+
+      try {
+        const encoder = new TextEncoder();
+        const raw = encoder.encode(xml);
+        const compressed = pako.deflateRaw(raw, { level: 9 });
+        const base64 = uint8ToBase64(compressed)
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_')
+          .replace(/=+$/, '');
+
+        const finalUrl = `https://viewer.diagrams.net/?lightbox=1&edit=_blank&layers=1&nav=1#R${base64}`;
+        document.getElementById('outputUrl').value = finalUrl;
+      } catch (e) {
+        alert("Erreur lors de la génération de l'URL : " + e.message);
+        console.error(e);
+      }
+    }
+  </script>
+</body>
+</html>
