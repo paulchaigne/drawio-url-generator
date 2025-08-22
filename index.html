@@ -1,97 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CSV to draw.io URL Generator</title>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+  <meta charset="UTF-8">
+  <title>CSV to Diagram HTML Generator</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 800px;
+      margin: auto;
+      padding: 2rem;
+    }
+    textarea {
+      width: 100%;
+      height: 200px;
+      margin-bottom: 1rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+    }
+    a.download-link {
+      display: block;
+      margin-top: 1rem;
+    }
+  </style>
 </head>
 <body>
-  <h1>CSV to draw.io URL Generator</h1>
-  <input type="file" id="csvFile" accept=".csv" />
-  <button onclick="generateUrl()">Generate draw.io Link</button>
-  <p id="status"></p>
-  <textarea id="result" rows="6" cols="100" readonly></textarea>
+  <h1>CSV to Standalone Diagram HTML</h1>
+  <p>Paste your Draw.io CSV (including the metadata headers), then click Generate:</p>
+  <textarea id="csvInput" placeholder="# label: ...\n# styles: ...\n...\nCSV data...\n"></textarea>
+  <button onclick="generateHTML()">Generate HTML File</button>
+  <a id="downloadLink" class="download-link" style="display:none">Download HTML</a>
 
   <script>
-    function csvToXml(csvText) {
-      // Extract metadata from the header comments
-      const lines = csvText.trim().split(/\r?\n/);
-      let headers = [];
-      let dataLines = [];
-      let meta = '';
-      let inData = false;
-
-      for (let line of lines) {
-        if (line.startsWith('##')) continue; // skip visual separators
-        if (line.startsWith('#')) {
-          meta += line + '\n';
-        } else {
-          if (!inData) {
-            headers = line.split(',');
-            inData = true;
-          } else {
-            dataLines.push(line);
-          }
-        }
-      }
-
-      const csvOnly = [headers.join(',')].concat(dataLines).join('\n');
-
-      // Recreate final text
-      return meta + csvOnly;
+    function encodeCSV(csv) {
+      return encodeURIComponent(csv.replace(/\n/g, '\r\n'));
     }
 
-    function encodeForDrawio(xmlString) {
-      const compressed = pako.deflateRaw(xmlString, { to: 'string' });
-      const base64 = btoa(
-        Array.from(compressed, (byte) => String.fromCharCode(byte)).join('')
-      );
+    function generateHTML() {
+      const csv = document.getElementById('csvInput').value.trim();
+      if (!csv) return alert("Please paste your CSV data.");
 
-      // Make base64 URL safe
-      return base64
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-    }
+      const encodedCsv = encodeCSV(csv);
+      const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Diagram Viewer</title>
+  <script type="text/javascript" src="https://viewer.diagrams.net/js/viewer-static.min.js"></script>
+</head>
+<body>
+  <div class="mxgraph" style="max-width:100%;border:1px solid transparent;" data-mxgraph='{
+    "highlight": "#0000ff",
+    "nav": true,
+    "resize": true,
+    "toolbar": "zoom layers tags lightbox",
+    "edit": "_blank",
+    "url": "data:text/csv,${encodedCsv}"
+  }'></div>
+</body>
+</html>`;
 
-    function generateUrl() {
-      const fileInput = document.getElementById('csvFile');
-      const resultBox = document.getElementById('result');
-      const status = document.getElementById('status');
-
-      if (!fileInput.files.length) {
-        alert('Please upload a CSV file first.');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        try {
-          const csvText = e.target.result;
-          const wrappedCsv = csvToXml(csvText);
-
-          const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<mxfile host="app.diagrams.net">
-  <diagram name="Page-1" id="csvimport">
-    ${wrappedCsv}
-  </diagram>
-</mxfile>`;
-
-          const encoded = encodeForDrawio(xml);
-          const url = `https://viewer.diagrams.net/?tags=%7B%7D&lightbox=1&highlight=0000ff&edit=_blank&layers=1&nav=1&dark=0#R${encoded}`;
-
-          resultBox.value = url;
-          status.textContent = 'URL successfully generated!';
-        } catch (err) {
-          console.error(err);
-          status.textContent = 'Error generating URL.';
-          resultBox.value = err.toString();
-        }
-      };
-
-      reader.readAsText(fileInput.files[0]);
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const link = document.getElementById('downloadLink');
+      link.href = url;
+      link.download = 'diagram.html';
+      link.style.display = 'inline';
+      link.textContent = 'Download diagram.html';
     }
   </script>
 </body>
